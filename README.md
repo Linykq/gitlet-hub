@@ -8,13 +8,9 @@
   <img src="https://img.shields.io/badge/version-1.0.0-blue.svg" alt="Version 1.0.0">
 </p>
 
-***
-
 Gitlet Hub is a GitHub-like platform built upon a custom version control system called Gitlet. It aims to help developers deeply understand the internals of version control systems and develop full-stack skills. This project is entirely built with Java and React, providing RESTful APIs and a modern, user-friendly frontend.
 
 ## Project Structure
-
-***
 
 This project uses a multi-module design, managed by Maven and npm/vite:
 
@@ -32,8 +28,6 @@ gitlet-hub
 ```
 
 ## Tech Stack
-
-***
 
 * **Backend**:
 
@@ -53,8 +47,6 @@ gitlet-hub
     * Tailwind CSS
 
 ## Quick Start
-
-***
 
 ### Backend
 
@@ -76,8 +68,6 @@ npm run dev
 
 ## Features and Roadmap
 
-***
-
 ### Implemented
 
 * Core Gitlet functionalities (commit, checkout, branch, etc.)
@@ -93,7 +83,5 @@ npm run dev
 * CI/CD automation
 
 ## License
-
-***
 
 This project is licensed under the GPL-3.0 License - see [LICENSE](LICENSE) for details.
