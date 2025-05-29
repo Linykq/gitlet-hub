@@ -1,4 +1,4 @@
-package org.gitlethub;
+package org.gitlethub.transport;
 
 import junit.framework.Test;
 import junit.framework.TestCase;

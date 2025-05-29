@@ -1,4 +1,4 @@
-package org.gitlethub.gitletserver;
+package org.gitlethub.server;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

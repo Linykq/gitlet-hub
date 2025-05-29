@@ -1,4 +1,4 @@
-package org.gitlethub;
+package org.gitlethub.transport;
 
 /**
  * Hello world!
