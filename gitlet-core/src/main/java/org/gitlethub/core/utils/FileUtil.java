@@ -3,6 +3,7 @@ package org.gitlethub.core.utils;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 
@@ -112,11 +113,24 @@ public class FileUtil {
         }
     }
 
-
     /**
      * String version of {@link #restrictedDelete(File)}
      */
     public static boolean restrictedDelete(String file) {
         return restrictedDelete(new File(file));
+    }
+
+    /**
+     * Return the combination of {@code first}'s path and a set of {@code others} as a path
+     */
+    public static File join(File first, String... others) {
+        return Paths.get(first.getPath(), others).toFile();
+    }
+
+    /**
+     * String input version of {@link #join(File, String...)}
+     */
+    public static File join(String first, String... others) {
+        return Paths.get(first, others).toFile();
     }
 }
