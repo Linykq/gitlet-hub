@@ -2,6 +2,7 @@ package org.gitlethub.core;
 
 import org.gitlethub.core.utils.FileUtil;
 import org.gitlethub.core.utils.HashUtil;
+import org.gitlethub.core.utils.CompressionUtil;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -11,6 +12,7 @@ import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.zip.DataFormatException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -170,5 +172,20 @@ public class UtilsTest {
         assertFalse(files.contains("file2.txt"));
         assertTrue(subDir.exists());
         assertTrue(subFile.exists());
+    }
+
+    /**
+     * Test for {@link CompressionUtil#compress(byte[])}and {@link CompressionUtil#deCompress(byte[])}
+     */
+    @Test
+    public void testCompressAndDeCompress() throws DataFormatException {
+        byte[] original = "Hello World!".getBytes();
+        byte[] compressed = CompressionUtil.compress(original);
+
+        assertNotNull(compressed);
+        assertArrayEquals(original, CompressionUtil.deCompress(compressed));
+
+        byte[] empty = new byte[0];
+        assertArrayEquals(empty, CompressionUtil.deCompress(CompressionUtil.compress(empty)));
     }
 }
