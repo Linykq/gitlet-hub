@@ -51,6 +51,7 @@ public class ModelTest {
         Blob tempBlob = new Blob(testBlobFile);
         tempBlob.makeBlob();
         assertEquals(tempBlob.getUid(), "c57eff55ebc0c54973903af5f72bac72762cf4f4");
+        assertEquals(tempBlob.getName(), "testBlob.txt");
         assertTrue(Files.exists(tempDir.resolve(".gitlet/objects/c5/7eff55ebc0c54973903af5f72bac72762cf4f4")));
         byte[] full = tempBlob.getRaw();
         int i = 0;

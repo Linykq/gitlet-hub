@@ -13,9 +13,9 @@ import static org.gitlethub.core.utils.HashUtil.*;
 
 public class Blob implements Serializable {
     /**
-     * The header of the blob object
+     * The name of the file of the Blob
      */
-    private final byte[] header;
+    private final String name;
     /**
      * The content includes the header to be zlib into the blob
      */
@@ -30,8 +30,9 @@ public class Blob implements Serializable {
      * A blob means a snapshot of tracked file.
      */
     public Blob(File f) {
+        this.name = f.getName();
         byte[] content = readContents(f);
-        this.header = ("blob " + content.length + "\0").getBytes(StandardCharsets.UTF_8);
+        byte[] header = ("blob " + content.length + "\0").getBytes(StandardCharsets.UTF_8);
         this.raw = new byte[content.length + header.length];
         System.arraycopy(header, 0, raw,0, header.length);
         System.arraycopy(content, 0, raw, header.length, content.length);
@@ -61,5 +62,12 @@ public class Blob implements Serializable {
      */
     public String getUid() {
         return uid;
+    }
+
+    /**
+     * @return name of the file of the Blob
+     */
+    public String getName() {
+        return name;
     }
 }
