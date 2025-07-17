@@ -43,12 +43,16 @@ public class Blob implements Serializable {
      * Writes Blob as Object to
      * {@code CWD}/.gitlet/objects/{@link #uid}first 2 digits/{@link #uid}last 38 digits.
      */
-    public void makeBlob() throws IOException {
+    public String makeBlob() {
         File outBlob = Repository.makeObjectFile(this.uid);
-        if (outBlob.exists()) return;
+        if (outBlob.exists()) return this.uid;
         writeObject(outBlob, CompressionUtil.compress(raw));
+        return this.uid;
     }
 
+    public static String getBlobUid(File f) {
+        return new Blob(f).getUid();
+    }
 
     /**
      * @return raw includes the header and content
