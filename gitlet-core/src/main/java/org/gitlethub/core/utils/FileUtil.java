@@ -3,8 +3,11 @@ package org.gitlethub.core.utils;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 public class FileUtil {
@@ -79,45 +82,71 @@ public class FileUtil {
     }
 
     /**
-     * Filter out all plain files (not dir)
+     * Returns a list of relative path names of all regular files under {@code dir}
      */
-    private static final FilenameFilter NOT_DIR_FILES = (dir, name) -> {
-        return new File(dir, name).isFile();
-    };
+    public static List<String> getAllFiles(File dir) {
+        if (dir == null || !dir.isDirectory()) {
+            return Collections.emptyList();
+        }
+
+        List<String> result = new ArrayList<>();
+        Path root = dir.toPath();
+
+        collectFiles(root, result);
+        Collections.sort(result);
+        return result;
+    }
 
     /**
-     * Returns a list of names of all files directly under {@code dir}
+     * DFS collect all files' path
      */
-    public static List<String> getDirectFiles(File dir) {
-        String[] files = dir.list(NOT_DIR_FILES);
-        if (files == null) {
-            return null;
-        } else {
-            Arrays.sort(files);
-            return Arrays.asList(files);
+    private static void collectFiles(Path current, List<String> out) {
+        File[] children = current.toFile().listFiles();
+        if (children == null) {
+            return;
+        }
+
+        for (File child : children) {
+            if (child.isFile()) {
+                String abs = child.getAbsolutePath();
+                out.add(abs);
+            } else if (child.isDirectory()) {
+                collectFiles(child.toPath(), out);
+            }
         }
     }
 
     /**
-     * Deletes a {@code file} if it exists under {@code .gitlet} directory
-     * and is not a directory.
+     * Delete files under the dir
      */
-    public static boolean restrictedDelete(File file) {
-        if (!(new File(file.getParentFile(), ".gitlet")).isDirectory()) {
-            throw new IllegalArgumentException("not .gitlet working directory");
+    private static boolean deleteRecursively(File dir) {
+        File[] list = dir.listFiles();
+        if (list != null) {
+            for (File child : list) {
+                if (!deleteRecursively(child)) {
+                    return false;
+                }
+            }
         }
-        if (!file.isDirectory()) {
-            return file.delete();
-        } else {
-            return false;
-        }
+        return dir.delete();
     }
 
     /**
-     * String version of {@link #restrictedDelete(File)}
+     * Deletes a {@code file} if it exists under {@code workDir} directory
      */
-    public static boolean restrictedDelete(String file) {
-        return restrictedDelete(new File(file));
+    public static boolean deleteAllFiles(Path target, Path workDir) throws IOException {
+        Path normTarget = target.toRealPath();
+        Path normWork   = workDir.toRealPath();
+
+        if (!normTarget.startsWith(normWork)) {
+            throw new IllegalArgumentException("Target outside working directory");
+        }
+
+        File file = normTarget.toFile();
+        if (file.isDirectory()) {
+            return deleteRecursively(file);
+        }
+        return file.delete();
     }
 
     /**

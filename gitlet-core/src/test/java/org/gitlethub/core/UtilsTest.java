@@ -116,10 +116,10 @@ public class UtilsTest {
     }
 
     /**
-     * Test for {@link FileUtil#getDirectFiles(File)}
+     * Test for {@link FileUtil#getAllFiles(File)}
      */
     @Test
-    public void testGetDirectFiles(@TempDir Path tempDir) throws IOException {
+    public void testGetAllFiles(@TempDir Path tempDir) throws IOException {
         File file1 = tempDir.resolve("file1.txt").toFile();
         File file2 = tempDir.resolve("file2.txt").toFile();
         File subDir = tempDir.resolve("subDir").toFile();
@@ -131,24 +131,20 @@ public class UtilsTest {
         File subFile = new File(subDir, "hidden.txt");
         assertTrue(subFile.createNewFile());
 
-        List<String> files = FileUtil.getDirectFiles(tempDir.toFile());
+        List<String> files = FileUtil.getAllFiles(tempDir.toFile());
 
         assertNotNull(files);
-        assertEquals(2, files.size());
-        assertTrue(files.contains("file1.txt"));
-        assertTrue(files.contains("file2.txt"));
-        assertFalse(files.contains("subDir"));
-        assertFalse(files.contains("hidden.txt"));
+        assertEquals(3, files.size());
+        assertTrue(files.contains(file1.getAbsolutePath()));
+        assertTrue(files.contains(file2.getAbsolutePath()));
+        assertTrue(files.contains(subFile.getAbsolutePath()));
     }
 
     /**
-     * Test for {@link FileUtil#restrictedDelete(File)}
+     * Test for {@link FileUtil#deleteAllFiles(Path, Path)}
      */
     @Test
-    public void testRestrictedDelete(@TempDir Path tempDir) throws IOException {
-        Path gitletDir = tempDir.resolve(".gitlet");
-        Files.createDirectory(gitletDir);
-
+    public void testDeleteAllFiles(@TempDir Path tempDir) throws IOException {
         File file1 = tempDir.resolve("file1.txt").toFile();
         File file2 = tempDir.resolve("file2.txt").toFile();
         File subDir = tempDir.resolve("subDir").toFile();
@@ -160,18 +156,13 @@ public class UtilsTest {
         File subFile = new File(subDir, "hidden.txt");
         assertTrue(subFile.createNewFile());
 
-        assertTrue(FileUtil.restrictedDelete(file1));
-        assertTrue(FileUtil.restrictedDelete(file2));
-        assertFalse(FileUtil.restrictedDelete(subDir));
-        assertThrows(IllegalArgumentException.class, () -> FileUtil.restrictedDelete(subFile));
+        assertTrue(FileUtil.deleteAllFiles(tempDir.resolve("file1.txt"), tempDir));
+        assertTrue(FileUtil.deleteAllFiles(tempDir.resolve("file2.txt"), tempDir));
+        assertTrue(FileUtil.deleteAllFiles(tempDir.resolve("subDir"), tempDir));
 
-        List<String> files = FileUtil.getDirectFiles(tempDir.toFile());
+        List<String> files = FileUtil.getAllFiles(tempDir.toFile());
 
-        assertNotNull(files);
-        assertFalse(files.contains("file1.txt"));
-        assertFalse(files.contains("file2.txt"));
-        assertTrue(subDir.exists());
-        assertTrue(subFile.exists());
+        assertEquals(0, files.size());
     }
 
     /**

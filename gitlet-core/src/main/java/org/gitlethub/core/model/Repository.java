@@ -2,6 +2,7 @@ package org.gitlethub.core.model;
 
 import org.gitlethub.core.utils.*;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.io.File;
 import java.util.List;
@@ -83,13 +84,10 @@ public class Repository implements Serializable {
     }
 
     /**
-     * Deletes all files in DIR
+     * Deletes all files in GITLET_DIR
      */
-    public static void clean(File dir) {
-        List<String> files = getDirectFiles(dir);
-        if (files != null) {
-            files.forEach(n -> join(dir, n).delete());
-        }
+    public static void clean(File dir) throws IOException {
+        deleteAllFiles(GITLET_DIR.toPath(), CWD.toPath());
     }
     /**
      * Get directory of a commit object or a blob object with its first two id.
