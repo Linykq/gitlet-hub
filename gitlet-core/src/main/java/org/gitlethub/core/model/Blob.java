@@ -29,14 +29,18 @@ public class Blob implements Serializable {
      * Instantiate a blob object with a File.
      * A blob means a snapshot of tracked file.
      */
-    public Blob(File f) {
-        this.name = f.getName();
-        byte[] content = readContents(f);
+    public Blob(File file) {
+        this.name = file.getName();
+        byte[] content = readContents(file);
         byte[] header = ("blob " + content.length + "\0").getBytes(StandardCharsets.UTF_8);
-        this.raw = new byte[content.length + header.length];
-        System.arraycopy(header, 0, raw,0, header.length);
-        System.arraycopy(content, 0, raw, header.length, content.length);
+        this.raw = concat(header, content);
         this.uid = sha1(this.raw);
+    }
+
+    public static String computeUid(File file) {
+        byte[] content = readContents(file);
+        byte[] header = ("blob " + content.length + "\0").getBytes(StandardCharsets.UTF_8);
+        return sha1(concat(header, content));
     }
 
     /**
@@ -48,10 +52,6 @@ public class Blob implements Serializable {
         if (outBlob.exists()) return this.uid;
         writeObject(outBlob, CompressionUtil.compress(raw));
         return this.uid;
-    }
-
-    public static String getBlobUid(File f) {
-        return new Blob(f).getUid();
     }
 
     /**
@@ -73,5 +73,12 @@ public class Blob implements Serializable {
      */
     public String getName() {
         return name;
+    }
+
+    private static byte[] concat(byte[] a, byte[] b) {
+        byte[] c = new byte[a.length + b.length];
+        System.arraycopy(a, 0, c, 0, a.length);
+        System.arraycopy(b, 0, c, a.length, b.length);
+        return c;
     }
 }
