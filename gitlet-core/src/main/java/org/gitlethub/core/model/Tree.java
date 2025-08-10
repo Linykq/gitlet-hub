@@ -8,7 +8,7 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
-import static org.gitlethub.core.utils.FileUtil.writeObject;
+import static org.gitlethub.core.utils.FileUtil.writeContents;
 
 public class Tree implements Serializable {
     /**
@@ -128,12 +128,110 @@ public class Tree implements Serializable {
 
         File outTree = Repository.makeObjectFile(this.uid);
         if (outTree.exists()) return;
-        writeObject(outTree, CompressionUtil.compress(raw));
+        writeContents(outTree, CompressionUtil.compress(raw));
     }
 
-    // TODO: Add this method after finishing Index
-    public void makeTree(Index index) {
+    /**
+     * Build and persist the whole tree object graph from Index state.
+     * It applies: finalFiles = tracked - removed + added, all keys converted to
+     * repository-relative paths with '/' separators.
+     *
+     * After building recursively, this Tree instance will mirror the root tree:
+     * entries/raw/uid will be copied from the built root.
+     */
+    public void makeTree(Index index) throws IOException {
+        // 1) Build final "relative-path -> blob uid" map
+        Map<String, String> finalFiles = new TreeMap<>(); // TreeMap for deterministic traversal
 
+        // tracked (HEAD snapshot)
+        index.getTracked().forEach((abs, uid) -> finalFiles.put(toRelPath(abs),uid));
+
+        // removed
+        for (String abs : index.getRemoved()) {
+            finalFiles.remove(toRelPath(abs));
+        }
+
+        // added (override or new)
+        index.getAdded().forEach((abs, uid) -> finalFiles.put(toRelPath(abs), uid));
+
+        // 2) Recursively build tree(s) and persist
+        Tree builtRoot = buildTreeRecursive(finalFiles, this.name);
+
+        // 3) Mirror results into this instance
+        this.entries.clear();
+        this.entries.addAll(builtRoot.entries);
+        this.raw = builtRoot.raw;
+        this.uid = builtRoot.uid;
+    }
+
+    /**
+     * Recursively build a Tree from a mapping where keys are relative paths (e.g., "src/Main.java").
+     * Each recursion level consumes one path segment:
+     * - Files at current level become BLOB entries.
+     * - Groups by first segment create subtrees (TREE entries).
+     */
+    private static Tree buildTreeRecursive(Map<String, String> relToBlob, String name) throws IOException {
+        Tree t = new Tree(name);
+
+        // Partition into: files at this level vs subdirectories
+        Map<String, String> filesHere = new TreeMap<>();
+        Map<String, Map<String, String>> byDir = new TreeMap<>();
+
+        for (Map.Entry<String, String> e : relToBlob.entrySet()) {
+            String rel = e.getKey();
+            String uid = e.getValue();
+
+            int slash = rel.indexOf('/');
+            if (slash < 0) {
+                // file at this level
+                filesHere.put(rel, uid);
+            } else {
+                String dir = rel.substring(0, slash);
+                String rest = rel.substring(slash + 1);
+                byDir.computeIfAbsent(dir, k -> new TreeMap<>()).put(rest, uid);
+            }
+        }
+
+        // Add blob entries
+        for (Map.Entry<String, String> fe : filesHere.entrySet()) {
+            t.addEntry(BLOB_MODE, fe.getKey(), fe.getValue());
+        }
+
+        // Recurse for subdirectories, then add tree entries with child uid
+        for (Map.Entry<String, Map<String, String>> de : byDir.entrySet()) {
+            String childName = de.getKey();
+            Tree child = buildTreeRecursive(de.getValue(), childName);
+            // ensure child is materialized (raw/uid written) before referencing
+            child.makeTree();
+            t.addEntry(TREE_MODE, childName, child.getUid());
+        }
+
+        // Materialize this level
+        t.makeTree();
+        return t;
+    }
+
+    /** Convert absolute (canonical) path to repository-relative path with '/' separators. */
+    private static String toRelPath(String absOrRel) {
+        File base = Repository.CWD.getAbsoluteFile();
+        File f = new File(absOrRel);
+        String abs;
+        try {
+            abs = f.getCanonicalFile().getAbsolutePath();
+        } catch (IOException e) {
+            abs = f.getAbsolutePath();
+        }
+        String root = base.getAbsolutePath();
+
+        String rel;
+        if (abs.startsWith(root)) {
+            rel = abs.substring(root.length());
+            if (rel.startsWith(File.separator)) rel = rel.substring(1);
+        } else {
+            // Fallback: if not under repo root, just normalize as best-effort
+            rel = f.toPath().normalize().toString();
+        }
+        return rel.replace(File.separatorChar, '/');
     }
 
     private static byte[] concat(byte[] a, byte[] b) {
